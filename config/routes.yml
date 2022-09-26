@@ -1,0 +1,21 @@
+admin_orders_create:
+  path: /sell/orders/orders/new
+  methods: [ GET ]
+  defaults:
+    _controller: 'GraphicCustomManager\Controller\Admin\OrderController::createAction'
+    _disable_module_prefix: true
+
+admin_orders_place:
+  path: /sell/orders/orders/place
+  methods: [ POST ]
+  defaults:
+    _controller: 'GraphicCustomManager\Controller\Admin\OrderController::placeAction'
+    _disable_module_prefix: true
+
+#    admin_orders_create:
+#      path: /new
+#      methods: [ GET ]
+#      defaults:
+#        _controller: PrestaShopBundle:Admin\Sell\Order\Order:create
+#        _legacy_controller: AdminOrders
+#        _legacy_link: AdminOrders:addorder
