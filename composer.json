@@ -1,0 +1,11 @@
+{
+  "name": "makhelij/graphiccustommanager",
+  "license": "AFL-3.0",
+  "autoload": {
+    "psr-4": {"GraphicCustomManager\\": "src/"},
+    "classmap": ["graphiccustommanager.php"],
+    "exclude-from-classmap": [],
+    "config": {"prepend-autoloader": false},
+    "type": "prestashop-module"
+  }
+}

@@ -24,25 +24,25 @@
 *}
 
 <div class="panel">
-	<h3><i class="icon icon-credit-card"></i> {l s='graphic custom module' mod='graphic_custom_manager'}</h3>
-	<p>
-		<strong>{l s='Here is my new generic module!' mod='graphic_custom_manager'}</strong><br />
-		{l s='Thanks to PrestaShop, now I have a great module.' mod='graphic_custom_manager'}<br />
-		{l s='I can configure it using the following configuration form.' mod='graphic_custom_manager'}
-	</p>
-	<br />
-	<p>
-		{l s='This module will boost your sales!' mod='graphic_custom_manager'}
-	</p>
+    <h3><i class="icon icon-credit-card"></i> {l s='graphic custom module' mod='graphiccustommanager'}</h3>
+    <p>
+        <strong>{l s='Here is my new generic module!' mod='graphiccustommanager'}</strong><br/>
+        {l s='Thanks to PrestaShop, now I have a great module.' mod='graphiccustommanager'}<br/>
+        {l s='I can configure it using the following configuration form.' mod='graphiccustommanager'}
+    </p>
+    <br/>
+    <p>
+        {l s='This module will boost your sales!' mod='graphiccustommanager'}
+    </p>
 </div>
 
 <div class="panel">
-	<h3><i class="icon icon-tags"></i> {l s='Documentation' mod='graphic_custom_manager'}</h3>
-	<p>
-		&raquo; {l s='You can get a PDF documentation to configure this module' mod='graphic_custom_manager'} :
-		<ul>
-			<li><a href="#" target="_blank">{l s='English' mod='graphic_custom_manager'}</a></li>
-			<li><a href="#" target="_blank">{l s='French' mod='graphic_custom_manager'}</a></li>
-		</ul>
-	</p>
+    <h3><i class="icon icon-tags"></i> {l s='Documentation' mod='graphiccustommanager'}</h3>
+    <p>
+        &raquo; {l s='You can get a PDF documentation to configure this module' mod='graphiccustommanager'} :
+    <ul>
+        <li><a href="#" target="_blank">{l s='English' mod='graphiccustommanager'}</a></li>
+        <li><a href="#" target="_blank">{l s='French' mod='graphiccustommanager'}</a></li>
+    </ul>
+    </p>
 </div>

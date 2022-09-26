@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
-	<name>graphic_custom_manager</name>
-	<displayName><![CDATA[graphic custom module]]></displayName>
-	<version><![CDATA[1.0.0]]></version>
-	<description><![CDATA[graphic custom module]]></description>
-	<author><![CDATA[globalitik]]></author>
-	<tab><![CDATA[administration]]></tab>
-	<is_configurable>1</is_configurable>
-	<need_instance>1</need_instance>
+    <name>graphic_custom_manager</name>
+    <displayName><![CDATA[graphic custom module]]></displayName>
+    <version><![CDATA[1.0.0]]></version>
+    <description><![CDATA[graphic custom module]]></description>
+    <author><![CDATA[globalitik]]></author>
+    <tab><![CDATA[administration]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>1</need_instance>
 </module>
