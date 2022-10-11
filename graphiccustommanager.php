@@ -23,18 +23,16 @@
  * @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  */
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-use GraphicCustomManager\Domain\Customer\Exception\CustomerException;
-use GraphicCustomManager\Domain\Customer\Command\UpdateCustomerCustomFieldsCommand;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\DataColumn;
 use PrestaShop\PrestaShop\Core\Grid\Filter\Filter;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Employee\EmployeeNameWithAvatarColumn;
 use GraphicCustomManager\Domain\Customer\Command\UpdateCustomerCustomFieldCommand;
+
 
 class GraphicCustomManager extends Module
 {
@@ -77,12 +75,15 @@ class GraphicCustomManager extends Module
             $this->registerHook('header') &&
             $this->registerHook('backOfficeHeader') &&
             $this->registerHook('actionOrderDetail') &&
-            $this->registerHook('actionOrderGridDefinitionModifier')&&
-            $this->registerHook('actionOrderGridQueryBuilderModifier')&&
-            $this->registerHook('actionCustomerFormBuilderModifier')&&
-            $this->registerHook('actionAfterCreateCustomerFormHandler')&&
-            $this->registerHook('actionAfterUpdateCustomerFormHandler');
-
+            $this->registerHook('actionOrderGridDefinitionModifier') &&
+            $this->registerHook('actionOrderGridQueryBuilderModifier') &&
+            $this->registerHook('displayAdminOrderTop') &&
+            $this->registerHook('actionCustomerFormBuilderModifier') &&
+            $this->registerHook('actionAfterCreateCustomerFormHandler') &&
+            $this->registerHook('actionAfterUpdateCustomerFormHandler') &&
+            $this->registerHook('actionAdminControllerInitAfter') &&
+            $this->registerHook('additionalCustomerFormFields') &&
+            $this->registerHook('displayAdminCustomers');
     }
 
     public function uninstall()
@@ -210,11 +211,7 @@ class GraphicCustomManager extends Module
      */
     protected function postProcess()
     {
-        $form_values = $this->getConfigFormValues();
-
-        foreach (array_keys($form_values) as $key) {
-            Configuration::updateValue($key, Tools::getValue($key));
-        }
+        //
     }
 
     /**
@@ -225,6 +222,10 @@ class GraphicCustomManager extends Module
         if (Tools::getValue('module_name') == $this->name) {
             $this->context->controller->addJS($this->_path . 'views/js/back.js');
             $this->context->controller->addCSS($this->_path . 'views/css/back.css');
+        }
+
+        if (Tools::getValue('action') && Tools::getValue('action') == 'addorder') {
+            $this->context->controller->addJS($this->_path . 'views/js/addorder.js');
         }
     }
 
@@ -237,29 +238,120 @@ class GraphicCustomManager extends Module
         $this->context->controller->addCSS($this->_path . '/views/css/front.css');
     }
 
+    /**
+     * ---------------------------------------------------------------------------
+     * Customer
+     * ---------------------------------------------------------------------------
+     */
+
+    public function hookDisplayAdminCustomers(array $params)
+    {
+        $customer = New CustomerCore($params['id_customer']);
+        return '<div class="col-md-3">
+
+                <div class="card">
+
+                  <h3 class="card-header">
+
+                    <i class="material-icons">info_outline</i>
+
+                    ' . $this->l("Informations complementaire") . '
+
+                  </h3>
+
+                  <div class="card-body">
+
+                    <div class="row mb-1">
+                      <div class="col-4 text-right">
+                        IBAN
+                      </div>
+                      <div class="customer-social-title col-8">
+                        '. $customer->iban .'
+                      </div>
+                    </div>
+                    
+                    <div class="row mb-1">
+                      <div class="col-4 text-right">
+                        BIC
+                      </div>
+                      <div class="customer-social-title col-8">
+                        '. $customer->bic .'
+                      </div>
+                    </div>
+                    
+                    <div class="row mb-1">
+                      <div class="col-4 text-right">
+                        Portable
+                      </div>
+                      <div class="customer-social-title col-8">
+                        '. $customer->portable .'
+                      </div>
+                    </div>
+                    
+                    <div class="row mb-1">
+                      <div class="col-4 text-right">
+                        Civilité
+                      </div>
+                      <div class="customer-social-title col-8">
+                        '. $customer->civilite .'
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                </div>';
+
+
+    }
+
+    public function hookAdditionalCustomerFormFields($params) {
+
+        return [
+            (new FormField)
+                ->setName('iban')
+                ->setType('text')
+                ->setRequired(false)
+                ->setLabel($this->l('IBAN')),
+            (new FormField)
+                ->setName('bic')
+                ->setType('text')
+                ->setRequired(false)
+                ->setLabel($this->l('BIC')),
+            (new FormField)
+                ->setName('portable')
+                ->setType('text')
+                ->setRequired(false)
+                ->setLabel($this->l('Portable')),
+            (new FormField)
+                ->setName('civilite')
+                ->setType('text')
+                ->setRequired(false)
+                ->setLabel($this->l('Civilité'))
+        ];
+    }
+
     public function hookActionCustomerFormBuilderModifier(array $params)
     {
         /** @var FormBuilderInterface $formBuilder */
         $formBuilder = $params['form_builder'];
+
         $formBuilder->add('iban', TextType::class, [
             'label' => $this->getTranslator()->trans('IBAN', [], 'Modules.GraphicCustomManager'),
             'required' => false,
         ]);
         $formBuilder->add('bic', TextType::class, [
             'label' => $this->getTranslator()->trans('BIC', [], 'Modules.GraphicCustomManager'),
-            'required' => false,
-        ]);
-        $formBuilder->add('bic', TextType::class, [
-            'label' => $this->getTranslator()->trans('BIC', [], 'Modules.GraphicCustomManager'),
-            'required' => false,
+            'required' => false
         ]);
         $formBuilder->add('portable', TextType::class, [
             'label' => $this->getTranslator()->trans('Mobile', [], 'Modules.GraphicCustomManager'),
-            'required' => false,
+            'required' => false
         ]);
         $formBuilder->add('civilite', TextType::class, [
             'label' => $this->getTranslator()->trans('Civilité', [], 'Modules.GraphicCustomManager'),
-            'required' => false,
+            'required' => false
         ]);
 
         $formBuilder->setData($params['data']);
@@ -275,9 +367,11 @@ class GraphicCustomManager extends Module
         $this->updateCustomerCustomFields($params);
     }
 
+
     private function updateCustomerCustomFields(array $params)
     {
         $customerId = $params['id'];
+
         /** @var array $customerFormData */
         $customerFormData = $params['form_data'];
         $iban = $customerFormData['iban'];
@@ -285,26 +379,27 @@ class GraphicCustomManager extends Module
         $portable = $customerFormData['portable'];
         $civilite = $customerFormData['civilite'];
 
-        /** @var CommandBusInterface $commandBus */
-        $commandBus = $this->get('prestashop.core.command_bus');
+        \Db::getInstance()->execute('UPDATE ' . _DB_PREFIX_ . 'customer SET `iban` = \'' . $iban . '\', `bic` = \'' . $bic . '\', `portable` = \'' . $portable . '\', `civilite`=\'' . $civilite . '\' WHERE `id_customer`=
+        '.$customerId);
+    }
 
-        try {
-            /*
-             * This part demonstrates the usage of CQRS pattern command to perform write operation for Customer entity.
-             * @see https://devdocs.prestashop.com/1.7/development/architecture/cqrs/ for more detailed information.
-             *
-             * As this is our recommended approach of writing the data but we not force to use this pattern in modules -
-             * you can use directly an entity here or wrap it in custom service class.
-             */
-            $commandBus->handle(new UpdateCustomerCustomFieldsCommand(
-                $customerId,
-                $iban,
-                $bic,
-                $portable,
-                $civilite
-            ));
-        } catch (CustomerException $exception) {
-            $this->handleException($exception);
+    /**
+     * ---------------------------------------------------------------------------
+     * Customer
+     * ---------------------------------------------------------------------------
+     */
+
+
+
+    /**
+     * ---------------------------------------------------------------------------
+     * Order
+     * ---------------------------------------------------------------------------
+     */
+
+    public function hookActionAdminControllerInitAfter(array $params) {
+        if(isset($_REQUEST['print_cgu']) && $_REQUEST['print_cgu']) {
+            $this->generatePDF($_REQUEST['order_id'], 'D');
         }
     }
 
@@ -318,8 +413,6 @@ class GraphicCustomManager extends Module
             $employeeColumn->setOptions([
                 'field' => 'employee',
             ]);
-
-            // die(dump($params['select']));
 
             /** @var ColumnCollection */
             $columns = $orderGridDefinition->getColumns();
@@ -344,7 +437,7 @@ class GraphicCustomManager extends Module
 
         } else {
             $searchQueryBuilder->addSelect(
-                'o.id_author, e.lastname AS `employee`'
+                'o.id_author, e.firstname AS `employee`'
             );
 
             $searchQueryBuilder->leftJoin(
@@ -363,7 +456,7 @@ class GraphicCustomManager extends Module
 
             foreach ($searchCriteria->getFilters() as $filterName => $filterValue) {
                 if ('employee' === $filterName) {
-                    $searchQueryBuilder->andWhere("e.lastname LIKE :$filterName");
+                    $searchQueryBuilder->andWhere("e.firstname LIKE :$filterName");
                     $searchQueryBuilder->setParameter($filterName, '%'.$filterValue.'%');
                 }
             }
@@ -373,5 +466,320 @@ class GraphicCustomManager extends Module
 
 
     }
+
+    public function hookDisplayAdminOrderTop(array $params)
+    {
+        $more_info = '';
+        $order_downloaded = $this->checkIfOrderIsDownloaded($params["id_order"]);
+        if(count($order_downloaded)) {
+            $more_info .= " <p class='btn'> File Downloaded at : <span style='color:#E74C3C'>". $order_downloaded[0]["date_download"] ."</span> By : <span style='color:#E74C3C'>".$order_downloaded[0]["ip_downloader"] . "</span></p>";
+        }
+
+        $html = "";
+        if(isset($_REQUEST['order_signature']) && $_REQUEST['order_signature'] && isset($_FILES['fileToUpload'])) {
+
+            $result = $this->uploadFile($params["id_order"]);
+
+            if($result['success']) {
+                $html .= $this->getDownloadDocBtn($result['data']['path']);
+            } else {
+                $html .= "<button class='btn' style='background-color:#E74C3C;color:#fff'>".$result["message"]."</button>";
+            }
+        } else {
+            $result = $this->checkIfOrderIsSigned($params["id_order"]);
+
+            if(count($result)) {
+                $html .= $this->getDownloadDocBtn($result[0]['signed_document']);
+            }
+        }
+
+        return '
+            <div class="order-actions col-md-12"">
+                 <form class="order-actions-print" method="post" action="'.$_SERVER['REQUEST_URI'].'">                    
+                    <div class="input-group">
+                      <input type="hidden" name="print_cgu" value="true">
+                      <input type="hidden" name="order_id" value="'.$params["id_order"].'">
+                      <button type="submit" class="btn btn-action">
+                        <i class="material-icons" aria-hidden="true">print</i>
+                        Imprimer CGU
+                      </button>
+                    </div>
+                  </form>                  
+                  
+                  
+                  <form class="order-actions-print" method="post" action="'.$_SERVER['REQUEST_URI'].'"  enctype="multipart/form-data">
+                    <div class="input-group">
+                    '. $html .'
+                      <input type="hidden" name="order_signature" value="true">
+                      <input type="hidden" name="order_id" value="'.$params["id_order"].'"> 
+                      <input type="file" name="fileToUpload" id="fileToUpload"  class="btn">
+                      <button type="submit" value="Signer la commande" name="submit" class="btn btn-action">                     
+                        <i class="material-icons" aria-hidden="true">upload</i>     
+                        Signer la commande                   
+                      </button>
+                    </div>
+                  </form>
+            </div> '. $more_info.'
+        ';
+//        $this->get('prestashop.module.demovieworderhooks.repository.order_repository');
+    }
+
+
+
+    public function checkIfOrderIsSigned($id_order) {
+        $query = new DbQuery();
+        $query->select('signature_date, signed_document');
+        $query->from('orders', 'o');
+        $query->where('`id_order` = ' . (int) $id_order);
+        $query->where('`signed_document` IS NOT NULL');
+
+        return Db::getInstance()->executeS($query);
+    }
+
+    public function checkIfOrderIsDownloaded($id_order) {
+        $query = new DbQuery();
+        $query->select('date_download, ip_downloader');
+        $query->from('orders', 'o');
+        $query->where('`id_order` = ' . (int) $id_order);
+        $query->where('`date_download` IS NOT NULL');
+
+        return Db::getInstance()->executeS($query);
+    }
+
+    public function getDownloadDocBtn($path) {
+        return '<a href="'.'\\..\\'.str_replace("/","\\",$path).'" class="btn btn-action" target="_blank">
+                    <i class="material-icons" aria-hidden="true">print</i>
+                    Imprimer le document signer
+                  </a>';
+    }
+
+    public function uploadFile($order_id) {
+        $target_dir = "../upload/";
+        $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+        $pdfFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+
+        if ($_FILES["fileToUpload"]["size"] > 5000000) {
+            return [
+                "success" => false,
+                "message" => "Sorry, your file is too large."
+            ];
+        }
+
+        if($pdfFileType != "pdf") {
+            return [
+                "success" => false,
+                "message" => "Sorry, only PDF files are allowed."
+            ];
+        }
+
+        if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+
+            $this->saveDateAndPathOfSignature($order_id, $target_file);
+            return [
+                "success" => true,
+                "message" => "Order Signed.",
+                "data"    => [
+                    "path" => $target_file
+                ]
+            ];
+        }
+
+        return [
+            "success" => false,
+            "message" => "Sorry, there was an error uploading your file."
+        ];
+    }
+
+    public function saveDateAndPathOfSignature($order_id, $path) {
+        \Db::getInstance()->execute('UPDATE ' . _DB_PREFIX_ . 'orders SET `signature_date`="' . date('Y-m-d H:i:s', time()) . '", `signed_document`="' . $path . '", `current_state`= 2023 WHERE `id_order`=
+                '.strval($order_id));
+    }
+
+    /**
+     * ---------------------------------------------------------------------------
+     * Order
+     * ---------------------------------------------------------------------------
+     */
+
+
+
+
+    /**
+     * ---------------------------------------------------------------------------
+     * PDF GENERATOR
+     *
+     * Destination where to send the document. It can be one of the following:
+     * I: send the file inline to the browser. The PDF viewer is used if available.
+     * D: send to the browser and force a file download with the name given by name.
+     * F: save to a local file with the name given by name (may include a path).
+     * S: return the document as a string.
+     *
+     * ---------------------------------------------------------------------------
+     */
+
+    public function getPdfAsAttachement($content)
+    {
+        return ['content' => $content, 'name' => 'CustomPDF', 'mime' => 'application/pdf'];
+    }
+
+    public function generatePDF($id_order, $output = 'F' )
+    {
+        $order = new Order((int) $id_order);
+        $customer = new Customer((int) $order->id_customer);
+        $myCustomSlipVarsForPdfContent = $this->myContentDatasPresenter($customer);
+        $myCustomSlipVarsForPdfFooter  = $this->myFooterDatasPresenter($order);
+        $myCustomSlipVarsForPdfHeader  = $this->myHeaderDatasPresenter($order);
+        $pdfGen = new PDFGenerator();
+        $pdfGen->setFontForLang(Context::getContext()->language->iso_code);
+        $pdfGen->startPageGroup();
+        $pdfGen->createHeader($this->getHeader($myCustomSlipVarsForPdfHeader));
+        $pdfGen->createFooter($this->getFooter($myCustomSlipVarsForPdfFooter));
+        $pdfGen->createContent($this->getPdfContent($myCustomSlipVarsForPdfContent));
+        $pdfGen->writePage();
+        if ($output != 'S') {
+            $pdfGen->render('my_custom_pdf.pdf', $output);
+        } else {
+            return $pdfGen->render('my_custom_pdf.pdf', $output);
+        }
+    }
+
+    /**
+     * Returns the template's HTML content.
+     *
+     * @return string HTML content
+     */
+    public function getPdfContent(array $myCustomSlipVarsForPdfContent): string
+    {
+        $this->context->smarty->assign($myCustomSlipVarsForPdfContent);
+        $tpls = array(
+            'style_tab'     => $this->context->smarty->fetch(_PS_ROOT_DIR_.'/pdf/invoice.style-tab.tpl'),
+            'addresses_tab' => $this->context->smarty->fetch(_PS_ROOT_DIR_.'/pdf/invoice.addresses-tab.tpl'),
+            'product_tab'   => $this->context->smarty->fetch(_PS_ROOT_DIR_.'/pdf/invoice.product-tab.tpl'),
+        );
+        $this->context->smarty->assign($tpls);
+
+        return $this->context->smarty->fetch(_PS_ROOT_DIR_.'/pdf/invoice.tpl');
+    }
+
+    /**
+     * Returns the template's HTML footer.
+     *
+     * @return string HTML footer
+     */
+    public function getFooter(array $myCustomSlipVarsForPdfFooter): string
+    {
+        $this->context->smarty->assign($myCustomSlipVarsForPdfFooter);
+        return $this->context->smarty->fetch(_PS_ROOT_DIR_.'/pdf/footer.tpl');
+    }
+
+    /**
+     * Returns the template's HTML header.
+     *
+     * @return string HTML header
+     */
+    public function getHeader(array $myCustomSlipVarsForPdfHeader): string
+    {
+        $this->context->smarty->assign($myCustomSlipVarsForPdfHeader);
+        return $this->context->smarty->fetch(_PS_ROOT_DIR_.'/pdf/header.tpl');
+    }
+
+
+    /**
+     * Format your order data here for pdf content : ['tpl_var_name'=>'tpl_value']
+     *
+     * @return array
+     */
+    public function myContentDatasPresenter(Customer $customer): array
+    {
+        return [
+            "summary_tab" => $customer->firstname.' '.$customer->lastname,
+            "note_tab" => $customer->email
+        ];
+    }
+
+    /**
+     * Format your order data here for pdf footer : ['tpl_var_name'=>'tpl_value']
+     *
+     * @return array
+     */
+    public function myFooterDatasPresenter(Order $myOrderObject): array
+    {
+        return [
+            "free_text" => "Lorem Ipsum"
+        ];
+    }
+
+    /**
+     * Format your order data here for pdf header : ['tpl_var_name'=>'tpl_value']
+     *
+     * @return array
+     */
+    public function myHeaderDatasPresenter(Order $myOrderObject): array
+    {
+        return [
+            "title" => $myOrderObject->reference
+        ];
+    }
+
+    /**
+     * ---------------------------------------------------------------------------
+     * PDF GENERATOR
+     * ---------------------------------------------------------------------------
+     */
+
+
+
+    /**
+     * ---------------------------------------------------------------------------
+     * MAIL
+     * ---------------------------------------------------------------------------
+     */
+
+        public function sendMail($params, $file_attachment)
+        {
+            Mail::Send(
+
+                $this->context->language->id,
+
+                'forward_msg',
+
+                $this->trans(
+
+                    'Fwd: Customer message',
+
+                    [],
+
+                    'Emails.Subject',
+
+                    $this->context->language->locale
+
+                ),
+
+                $params,
+
+                "gmoail101@gmail.com",//$employee->email,
+
+                "Mohamed Akhelij", //$employee->firstname . ' ' . $employee->lastname,
+
+                "gmoail101@gmail.com",//$current_employee->email,
+
+                "Mohamed Akhelij", //$current_employee->firstname . ' ' . $current_employee->lastname,
+
+                $file_attachment,
+
+                null,
+
+                _PS_MAIL_DIR_,
+
+                true
+
+            );
+        }
+
+    /**
+     * ---------------------------------------------------------------------------
+     * MAIL
+     * ---------------------------------------------------------------------------
+     */
 
 }
